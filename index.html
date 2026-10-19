@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="description" content="Registro de asistencia para reuniones. Suma presencial y Zoom automáticamente y comparte el resumen por WhatsApp.">
+  <title>Contador de asistencia</title>
+  <style>
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { --accent:#2563eb; --soft:#eef4ff; --border:#b8cdff; --dark:#194bc2; margin:0; background:#f3f6fa; color:#18283d; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; line-height:1.4; }
+    body[data-tipo="fin"] { --accent:#7042c8; --soft:#f4eeff; --border:#d7c2ff; --dark:#532bab; }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    button:focus-visible,input:focus-visible,select:focus-visible { outline:3px solid var(--border); outline-offset:2px; }
+    .container { max-width:630px; padding:22px 14px max(36px,env(safe-area-inset-bottom)); margin:auto; }
+    header { display:flex; gap:13px; align-items:center; padding:4px 2px 18px; }
+    .mark { width:48px; height:48px; flex:0 0 48px; border-radius:14px; display:grid; place-items:center; background:var(--accent); color:#fff; font-size:26px; box-shadow:0 8px 18px #162c4a17; }
+    .eyebrow { font-size:10px; text-transform:uppercase; font-weight:800; color:var(--accent); letter-spacing:1.3px; margin:0 0 3px; }
+    h1 { margin:0; font-size:24px; letter-spacing:-.8px; line-height:1.15; }
+    .sub { color:#68788b; margin:4px 0 0; font-size:13px; }
+    .card { padding:19px; border:1px solid #e3e9f0; background:#fff; border-radius:20px; box-shadow:0 6px 24px #233b5910; margin-bottom:13px; }
+    h2 { font-size:15px; margin:0 0 14px; }
+    .label { display:block; color:#506279; font-size:12px; font-weight:800; margin-bottom:7px; }
+    .field-large { width:100%; min-height:50px; border:1px solid #d7e0eb; border-radius:12px; padding:0 13px; background:#fff; color:#18283d; font-size:16px; }
+    .field-large:focus { border-color:var(--accent); }
+    .row-meta { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .meeting-title { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .meeting-title .pill { padding:5px 9px; border-radius:99px; background:var(--soft); color:var(--dark); font-size:11px; font-weight:800; white-space:nowrap; }
+    .counter-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+    .counter { border:1px solid #e1e7ef; border-radius:13px; padding:10px; min-width:0; }
+    .counter:focus-within { border-color:var(--accent); background:var(--soft); }
+    .counter label { display:block; color:#4d6077; font-weight:750; font-size:12px; margin-bottom:7px; }
+    .counter-controls { display:flex; align-items:center; gap:6px; }
+    .small-btn { width:30px; height:35px; flex:0 0 30px; border-radius:9px; border:1px solid #dce5f0; background:#f7f9fc; color:#415470; font-size:19px; font-weight:700; line-height:1; }
+    .small-btn:active { background:#dfebff; }
+    .count-input { flex:1; min-width:0; width:100%; height:35px; padding:1px 3px; text-align:center; border:0; outline:0; border-radius:6px; background:transparent; color:#16253a; font-weight:850; font-size:21px; font-variant-numeric:tabular-nums; }
+    .count-input::placeholder { color:#b4c0cf; }
+    .count-input:focus { outline:2px solid var(--border); background:#fff; }
+    .zoom-box { border-color:var(--border); background:var(--soft); }
+    .zoom-box .count-input { color:var(--dark); }
+    input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+    input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
+    .help { margin:13px 0 0; color:#758397; font-size:11px; }
+    .totals { background:var(--accent); color:#fff; border-color:transparent; transition:background-color .15s; }
+    .totals h2 { color:#f4f7ff; }
+    .totals-top { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .total-box { border-radius:12px; padding:12px; background:#ffffff24; border:1px solid #ffffff2c; }
+    .total-box span { display:block; color:#ffffffdd; font-size:12px; }
+    .total-box strong { font-size:34px; display:block; font-variant-numeric:tabular-nums; line-height:1.2; }
+    .total-bottom { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:16px; padding-top:13px; border-top:1px solid #ffffff55; font-weight:800; }
+    .total-bottom strong { font-size:27px; font-variant-numeric:tabular-nums; }
+    .checkbox { display:flex; gap:9px; align-items:center; margin-bottom:15px; font-size:13px; color:#536379; }
+    .checkbox input { accent-color:var(--accent); width:18px; height:18px; }
+    .primary { display:block; border:0; width:100%; background:#138f57; color:#fff; border-radius:13px; padding:15px; min-height:54px; font-weight:850; font-size:15px; }
+    .primary:active { background:#0e784a; }
+    .utility { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .utility button { border:0; background:none; color:#566a80; font-size:12px; padding:8px; font-weight:700; }
+    .utility button:active { color:var(--dark); }
+    .status { min-height:18px; margin:7px 0 0; color:#0c8054; text-align:center; font-weight:700; font-size:12px; }
+    footer { text-align:center; font-size:11px; color:#8793a2; line-height:1.6; padding:3px 8px; }
+    .js-warning { padding:12px; background:#fff5dc; border:1px solid #f2cd78; color:#72521e; border-radius:11px; margin-bottom:15px; font-size:13px; }
+    @media(max-width:390px){ .container { padding:15px 10px 28px; } .card { padding:15px; } h1 { font-size:22px; } .counter-grid { gap:7px; } .counter { padding:8px; } .counter label { font-size:11px; } .counter-controls { gap:2px; } .small-btn { flex-basis:27px; width:27px; height:34px; } .count-input { font-size:19px; } .row-meta { gap:8px; } }
+  </style>
+</head>
+<body data-tipo="semana">
+  <main class="container">
+    <header>
+      <div class="mark" aria-hidden="true">☑</div>
+      <div><p class="eyebrow">Registro sencillo</p><h1>Contador de asistencia</h1><p class="sub">Escribe una cantidad o usa los botones + y −.</p></div>
+    </header>
+    <div id="js-warning" class="js-warning">⚠️ Esta vista no está ejecutando el contador. Ábrelo como página web en Safari o Chrome; la vista previa de archivos de WhatsApp puede no permitir los cálculos.</div>
+    <section class="card" aria-label="Datos de la reunión">
+      <div class="meeting-title"><h2>Datos de la reunión</h2><span class="pill" id="color-indicator">Entre semana · Azul</span></div>
+      <div class="row-meta">
+        <div><label class="label" for="tipo">Reunión</label><select class="field-large" id="tipo"><option value="semana">Entre semana</option><option value="fin">Fin de semana</option></select></div>
+        <div><label class="label" for="fecha">Fecha</label><input class="field-large" type="date" id="fecha"></div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="sectores-title">
+      <h2 id="sectores-title">Asistencia por lugar</h2>
+      <div class="counter-grid">
+        <div class="counter"><label for="plataforma">Plataforma</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="plataforma" data-delta="-1" aria-label="Restar uno en Plataforma">−</button><input class="count-input" id="plataforma" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Plataforma"><button class="small-btn" type="button" data-adjust="plataforma" data-delta="1" aria-label="Sumar uno en Plataforma">+</button></div></div>
+        <div class="counter"><label for="izquierda">Izquierda</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="izquierda" data-delta="-1" aria-label="Restar uno en Izquierda">−</button><input class="count-input" id="izquierda" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Izquierda"><button class="small-btn" type="button" data-adjust="izquierda" data-delta="1" aria-label="Sumar uno en Izquierda">+</button></div></div>
+        <div class="counter"><label for="centro">Centro</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="centro" data-delta="-1" aria-label="Restar uno en Centro">−</button><input class="count-input" id="centro" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Centro"><button class="small-btn" type="button" data-adjust="centro" data-delta="1" aria-label="Sumar uno en Centro">+</button></div></div>
+        <div class="counter"><label for="derecha">Derecha</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="derecha" data-delta="-1" aria-label="Restar uno en Derecha">−</button><input class="count-input" id="derecha" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Derecha"><button class="small-btn" type="button" data-adjust="derecha" data-delta="1" aria-label="Sumar uno en Derecha">+</button></div></div>
+        <div class="counter"><label for="fondo">Fondo</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="fondo" data-delta="-1" aria-label="Restar uno en Fondo">−</button><input class="count-input" id="fondo" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Fondo"><button class="small-btn" type="button" data-adjust="fondo" data-delta="1" aria-label="Sumar uno en Fondo">+</button></div></div>
+        <div class="counter"><label for="literatura">Literatura</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="literatura" data-delta="-1" aria-label="Restar uno en Literatura">−</button><input class="count-input" id="literatura" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Literatura"><button class="small-btn" type="button" data-adjust="literatura" data-delta="1" aria-label="Sumar uno en Literatura">+</button></div></div>
+        <div class="counter"><label for="hall">Hall</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="hall" data-delta="-1" aria-label="Restar uno en Hall">−</button><input class="count-input" id="hall" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Hall"><button class="small-btn" type="button" data-adjust="hall" data-delta="1" aria-label="Sumar uno en Hall">+</button></div></div>
+        <div class="counter"><label for="estacionamiento">Estacionamiento</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="estacionamiento" data-delta="-1" aria-label="Restar uno en Estacionamiento">−</button><input class="count-input" id="estacionamiento" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Estacionamiento"><button class="small-btn" type="button" data-adjust="estacionamiento" data-delta="1" aria-label="Sumar uno en Estacionamiento">+</button></div></div>
+        <div class="counter"><label for="otros">Otros</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="otros" data-delta="-1" aria-label="Restar uno en Otros">−</button><input class="count-input" id="otros" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes en Otros"><button class="small-btn" type="button" data-adjust="otros" data-delta="1" aria-label="Sumar uno en Otros">+</button></div></div>
+        <div class="counter zoom-box"><label for="zoom">Zoom</label><div class="counter-controls"><button class="small-btn" type="button" data-adjust="zoom" data-delta="-1" aria-label="Restar uno en Zoom">−</button><input class="count-input" id="zoom" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Asistentes por Zoom"><button class="small-btn" type="button" data-adjust="zoom" data-delta="1" aria-label="Sumar uno en Zoom">+</button></div></div>
+      </div>
+      <p class="help">Los casilleros vacíos cuentan como cero. Zoom no se suma al presencial.</p>
+    </section>
+    <section class="card totals" aria-live="polite" aria-label="Resumen de asistencia">
+      <h2>Resumen de asistencia</h2>
+      <div class="totals-top"><div class="total-box"><span>Presencial</span><strong id="total-presencial">0</strong></div><div class="total-box"><span>Zoom</span><strong id="total-zoom">0</strong></div></div>
+      <div class="total-bottom"><span>Total general</span><strong id="total-general">0</strong></div>
+    </section>
+    <section class="card" aria-label="Enviar asistencia">
+      <label class="checkbox" for="incluir-detalle"><input id="incluir-detalle" type="checkbox">Incluir desglose por lugar en WhatsApp</label>
+      <button class="primary" id="enviar" type="button">✆ Enviar asistencia por WhatsApp</button>
+      <div class="utility"><button type="button" id="copiar">Copiar resumen</button><button type="button" id="nueva">Nueva reunión</button><button type="button" id="compartir-app">Compartir contador</button></div>
+      <p class="status" id="status" role="status"></p>
+    </section>
+    <footer>Los números se guardan únicamente en este navegador. Esta página no requiere iniciar sesión ni una base de datos.</footer>
+  </main>
+  <script>
+  (function () {
+    'use strict';
+    var ids = ['plataforma','izquierda','centro','derecha','fondo','literatura','hall','estacionamiento','otros','zoom'];
+    var names = ['Plataforma','Izquierda','Centro','Derecha','Fondo','Literatura','Hall','Estacionamiento','Otros','Zoom'];
+    var inputs = {};
+    var storageKey = 'contador-asistencia-v3';
+    var tipo = document.getElementById('tipo');
+    var fecha = document.getElementById('fecha');
+    var status = document.getElementById('status');
+    var timer = null;
+    var i;
+    document.getElementById('js-warning').style.display = 'none';
+    for (i = 0; i < ids.length; i++) inputs[ids[i]] = document.getElementById(ids[i]);
+    function today() {
+      var d = new Date();
+      return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    }
+    function numberFor(id) {
+      var v = parseInt(inputs[id].value, 10);
+      return isFinite(v) && v > 0 ? v : 0;
+    }
+    function totals() {
+      var presencial = 0;
+      for (var j = 0; j < ids.length - 1; j++) presencial += numberFor(ids[j]);
+      var zoom = numberFor('zoom');
+      return { presencial:presencial, zoom:zoom, general:presencial+zoom };
+    }
+    function render() {
+      var t = totals();
+      document.getElementById('total-presencial').textContent = t.presencial.toLocaleString('es-CL');
+      document.getElementById('total-zoom').textContent = t.zoom.toLocaleString('es-CL');
+      document.getElementById('total-general').textContent = t.general.toLocaleString('es-CL');
+      var isFin = tipo.value === 'fin';
+      document.body.setAttribute('data-tipo', isFin ? 'fin' : 'semana');
+      document.getElementById('color-indicator').textContent = isFin ? 'Fin de semana · Morado' : 'Entre semana · Azul';
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', isFin ? '#7042c8' : '#2563eb');
+    }
+    function save() {
+      var data = {tipo:tipo.value,fecha:fecha.value,detail:{}};
+      for (var j = 0; j < ids.length; j++) data.detail[ids[j]] = inputs[ids[j]].value;
+      try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch (err) { /* modo privado o vista restringida */ }
+    }
+    function changed() { render(); save(); }
+    function normalized(id) {
+      if (inputs[id].value === '') return;
+      inputs[id].value = String(numberFor(id));
+    }
+    function show(text) {
+      status.textContent = text;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () {status.textContent = '';}, 4500);
+    }
+    function displayDate() {
+      var s = fecha.value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return 'Sin fecha';
+      var p = s.split('-');
+      return new Date(Number(p[0]),Number(p[1])-1,Number(p[2])).toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'});
+    }
+    function summary() {
+      var t=totals();
+      var meeting = tipo.value === 'fin' ? 'Fin de semana' : 'Entre semana';
+      var lines=['📋 *Registro de asistencia*','🏛️ Reunión: *' + meeting + '*','📅 Fecha: *' + displayDate() + '*','','👥 *Total presencial: ' + t.presencial + '*','📱 Zoom: ' + t.zoom,'✅ *Total general: ' + t.general + '*'];
+      if (document.getElementById('incluir-detalle').checked) {
+        lines.push('', '*Detalle por lugar:*');
+        for(var j=0;j<ids.length;j++) lines.push('• ' + names[j] + ': ' + numberFor(ids[j]));
+      }
+      return lines.join('\n');
+    }
+    function copyText(str) {
+      if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(str);
+      return new Promise(function (resolve,reject) {
+        var ta=document.createElement('textarea');
+        ta.value=str; ta.setAttribute('readonly',''); ta.style.position='fixed';ta.style.opacity='0';
+        document.body.appendChild(ta);ta.select();
+        try { if (!document.execCommand('copy')) throw Error('Copia no soportada'); document.body.removeChild(ta);resolve(); }
+        catch (err) {document.body.removeChild(ta);reject(err);}
+      });
+    }
+    for (i=0;i<ids.length;i++) {
+      (function(id){
+        inputs[id].addEventListener('input',changed);
+        inputs[id].addEventListener('change',function(){normalized(id);changed();});
+      })(ids[i]);
+    }
+    var adjustButtons = document.querySelectorAll('[data-adjust]');
+    for (i=0;i<adjustButtons.length;i++) {
+      adjustButtons[i].addEventListener('click', function(){
+        var id=this.getAttribute('data-adjust');
+        var delta=Number(this.getAttribute('data-delta'));
+        inputs[id].value = String(Math.max(0, numberFor(id)+delta));
+        changed();
+      });
+    }
+    tipo.addEventListener('change',changed);
+    fecha.addEventListener('change',changed);
+    document.getElementById('enviar').addEventListener('click',function(){
+      if (!fecha.value) { show('Selecciona la fecha de la reunión.'); fecha.focus();return; }
+      window.location.href='https://wa.me/?text=' + encodeURIComponent(summary());
+    });
+    document.getElementById('copiar').addEventListener('click',function(){
+      copyText(summary()).then(function(){show('Resumen copiado.');}).catch(function(){show('No se pudo copiar. Usa el botón de WhatsApp.');});
+    });
+    document.getElementById('nueva').addEventListener('click',function(){
+      if (!window.confirm('¿Comenzar una nueva reunión y borrar las cantidades?')) return;
+      for(var j=0;j<ids.length;j++)inputs[ids[j]].value='';
+      fecha.value=today();
+      document.getElementById('incluir-detalle').checked=false;
+      changed();show('Conteo reiniciado.');window.scrollTo(0,0);
+    });
+    document.getElementById('compartir-app').addEventListener('click',function(){
+      if (window.location.protocol !== 'https:' && window.location.protocol !== 'http:') {
+        show('Comparte el enlace de GitHub Pages una vez publicado.'); return;
+      }
+      window.location.href='https://wa.me/?text=' + encodeURIComponent('Contador de asistencia para reuniones: ' + window.location.href);
+    });
+    fecha.value=today();
+    try {
+      var raw = localStorage.getItem(storageKey);
+      var saved = raw ? JSON.parse(raw) : null;
+      if (saved && typeof saved === 'object') {
+        if (saved.tipo === 'fin') tipo.value='fin';
+        if (typeof saved.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(saved.fecha)) fecha.value=saved.fecha;
+        if (saved.detail && typeof saved.detail === 'object') {
+          for(i=0;i<ids.length;i++) if (saved.detail[ids[i]] !== undefined) inputs[ids[i]].value=String(saved.detail[ids[i]]);
+        }
+      }
+    } catch (err) { /* no detener la app si el navegador impide el almacenamiento */ }
+    render();
+  })();
+  </script>
+</body>
+</html>
